@@ -8,14 +8,10 @@ import yfinance as yf
 # import data
 def get_data(stocks, start, end):
     stockData = pdr.get_data_yahoo(stocks, start, end)
-    print(list(stockData))
-    print(stockData.info())
     stockData = stockData['Close']
-    #print(stockData)
     returns = stockData.pct_change()
     meanReturns = returns.mean()
     covMatrix = returns.cov()
-    #print(returns)
     return meanReturns, covMatrix
 
 stockList = ['AKRBP.OL', 'AUSS.OL', 'COOL.OL', 'GJF.OL', 'HAFNI.OL', 'KOG.OL', 'MOWI.OL', 'NORAM.OL', 'NSKOG.OL']
@@ -71,6 +67,7 @@ plt.ylabel('Frequensy')
 plt.xlabel('Portifolio Value rounded ($)')
 plt.title('MC simulation of a stock portfolio, ' + print_list)
 plt.show()
+
 """
 plt.plot(portfolio_sims)
 plt.ylabel('Portfolio Value ($)')
@@ -79,4 +76,3 @@ plt.title('MC simulation of a stock portfolio ' + stockList[0])
 plt.show()
 actual_return(stocks, startDate_1, endDate_1)"""
 
-#get_data_2(stocks, startDate, endDate)
