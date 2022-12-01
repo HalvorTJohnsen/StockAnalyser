@@ -43,6 +43,20 @@ def menu():
         print("You have not chosen a valid choice. Please choose a valid choice!")
         menu()
 
+def read_txt():
+    my_file = open("ownportifolio.txt", "r")
+
+    data = my_file.read()
+
+    data_into_list = data.split('\n')
+
+    list_to_return = []
+
+    for item in data_into_list: list_to_return.append(item.upper())
+    
+    print(list_to_return)
+    my_file.close()
+
 def mc_pareto_simulations():
     def get_data(stocks, start, end):
         stockData = pdr.get_data_yahoo(stocks, start, end)
