@@ -45,19 +45,28 @@ def menu():
         menu()
 
 start_up()
-user_input = menu()
 
-if user_input == 1:
-    mc_pareto_simulations
 
-elif user_input == 2:
-    stocks = get_input_stocks()
-    stock_simulations(stocks)
+def main():
+    user_input = menu()
 
-elif user_input == 3:
-    stocks = get_input_stocks()
-    verify_model(stocks)
+    if user_input == 1:
+        mc_pareto_simulations
 
-elif user_input == 4:
-    stocks = get_input_stocks()
-    plot_dividents(stocks)
+    elif user_input == 2:
+        stocks = get_input_stocks()
+        stock_simulations(stocks)
+
+    elif user_input == 3:
+        stocks = get_input_stocks()
+        verify_model(stocks)
+
+    elif user_input == 4:
+        stocks = get_input_stocks()
+        plot_dividents(stocks)
+
+    main()
+
+
+    
+main()
