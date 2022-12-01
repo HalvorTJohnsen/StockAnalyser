@@ -12,17 +12,19 @@ warnings.filterwarnings('ignore')
 
 def start_up():
     os.system('cls||clear')
-    print("Welcome to this Monte Carlo Simulator program. To browse the availabe stocck, pleas visit:  https://finance.yahoo.com/ . The stock ticker is located behind the company name, Apple (AAPL).")
+    print("Welcome to this Monte Carlo Simulator program. To browse the availabe stocck, please visit:  https://finance.yahoo.com/ . The stock ticker is located behind the company name, Apple (AAPL).")
+    print('\n')
     return
 
 def menu():
-    menu_list = [1,2,3,4,5]
-    print('\n')
+    menu_list = [1,2,3,4,5, 6, 7]
     print("1. Analyse Paretos model portefolio")
     print("2. Choose your own stocks")
     print("3. Test the model")
     print("4. Plot dividents from stock")
     print("5. Use machine learning to predict tomorrows stock price")
+    print("6. Plot stock trend history")
+    print("7. Clear terminal")
 
     user_input = input("Choice: ")
 
@@ -357,7 +359,7 @@ def verify_model(input_stocks):
 
     plt.hist(histogram_array, bins = bins_list, edgecolor = 'black')
     plt.axvline(initialPortfolio, color='red', linestyle='dashed', linewidth=1)
-    plt.axvline(actual_return(stocks, startDate, endDate, initialPortfolio), color = 'green', linewidth = 1)
+    plt.axvline(actual_return(stocks, startDate, endDate, initialPortfolio), color = 'yellow', linewidth = 1)
     plt.ylabel('Frequensy')
     plt.xlabel('Portifolio Value rounded ($)')
     plt.title('MC simulation of a stock portfolio, ' + print_list)
@@ -507,6 +509,31 @@ def plot_dividents(input_stocks):
     plt.title("Dividends in " + str((TICKER_INFO['currency'])))
     plt.show()
 
+def plot_stock_history(input_stocks):
+    tickers_list = input_stocks
+
+    data = yf.download(tickers_list,'2015-1-1')['Adj Close']
+
+        # Plot all the close prices
+    ((data.pct_change()+1).cumprod()).plot(figsize=(10, 7))
+
+    # Show the legend
+    plt.legend()
+
+    # Define the label for the title of the figure
+    plt.title("Returns", fontsize=16)
+
+    # Define the labels for x-axis and y-axis
+    plt.ylabel('Cumulative Returns', fontsize=14)
+    plt.xlabel('Year', fontsize=14)
+
+    # Plot the grid lines
+    plt.grid(which="major", color='k', linestyle='-.', linewidth=0.5)
+    plt.show()
+
+def clear_window():
+    os.system('cls||clear')
+
 def main():
     user_input = menu()
 
@@ -529,4 +556,12 @@ def main():
         stocks = get_input_stock()
         ml_stock_predictor(stocks)
 
-    main() 
+    elif user_input == 6:
+        stocks = get_input_stocks()
+        plot_stock_history(stocks)
+
+    elif user_input == 7:
+        clear_window()
+
+
+    main()
