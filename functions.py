@@ -5,20 +5,19 @@ import datetime as dt
 from pandas_datareader import data as pdr
 import yfinance as yf
 from dateutil.relativedelta import relativedelta
-
-
+import os
 import warnings
 warnings.filterwarnings('ignore')
 
+
 def start_up():
-    print('\n')
-    print('\n')
+    os.system('cls||clear')
     print("Welcome to this Monte Carlo Simulator program. To browse the availabe stocck, pleas visit:  https://finance.yahoo.com/ . The stock ticker is located behind the company name, Apple (AAPL).")
     return
 
 def menu():
     menu_list = [1,2,3,4,5]
-
+    print('\n')
     print("1. Analyse Paretos model portefolio")
     print("2. Choose your own stocks")
     print("3. Test the model")
@@ -272,6 +271,29 @@ def get_input_stocks():
     else:
         get_input_stocks()
 
+def get_input_stock():
+    n = 0
+    stocks = []
+    while n < 1:
+        stock = input("Enter your stock ticker: ")
+        try:
+            val = pdr.get_data_yahoo(stock)
+            stocks.append(stock.upper())
+            n += 1
+        except:
+            print("The ticker does not exist!")
+
+
+    print("You have selected: ", [stock for stock in stocks])
+
+    confirm = str(input("Is this correct? [Y/n] "))
+
+    if confirm == "y" or confirm == '' or confirm == 'Y':
+        return stock[0]
+
+    else:
+        get_input_stocks()
+
 def verify_model(input_stocks):
     def get_data(stocks, start, end):
         stockData = pdr.get_data_yahoo(stocks, start, end)
@@ -463,37 +485,7 @@ def ml_stock_predictor(input_stock):
 
     print(str(ticker_info['shortName']) + " is predicted to close at " + str(prediction) + ". That is a change of " + str(change))
 
-def main():
-    user_input = menu()
-
-    if user_input == 1:
-        mc_pareto_simulations()
-
-    elif user_input == 2:
-        stocks = get_input_stocks()
-        stock_simulations(stocks)
-
-    elif user_input == 3:
-        stocks = get_input_stocks()
-        verify_model(stocks)
-
-    elif user_input == 4:
-        stocks = get_input_stocks()
-        plot_dividents(stocks)
-
-    elif user_input == 5:
-        stocks = get_input_stocks()
-        ml_stock_predictor(stocks)
-
-    main() 
-
 def plot_dividents(input_stocks):   
-    from sklearn.preprocessing import MinMaxScaler
-    from tensorflow import keras
-    from keras.models import Sequential
-    from keras.layers import Dense, Dropout, LSTM
-    import sklearn
-    import pandas_datareader as web
 
     TICKER = yf.Ticker(input_stocks[0])
 
@@ -514,3 +506,27 @@ def plot_dividents(input_stocks):
     df.plot(x="Date", y='Dividends', kind='bar')
     plt.title("Dividends in " + str((TICKER_INFO['currency'])))
     plt.show()
+
+def main():
+    user_input = menu()
+
+    if user_input == 1:
+        mc_pareto_simulations()
+
+    elif user_input == 2:
+        stocks = get_input_stocks()
+        stock_simulations(stocks)
+
+    elif user_input == 3:
+        stocks = get_input_stocks()
+        verify_model(stocks)
+
+    elif user_input == 4:
+        stocks = get_input_stock()
+        plot_dividents(stocks)
+
+    elif user_input == 5:
+        stocks = get_input_stock()
+        ml_stock_predictor(stocks)
+
+    main() 
