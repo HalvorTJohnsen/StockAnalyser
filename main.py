@@ -4,69 +4,8 @@ import matplotlib.pyplot as plt
 import datetime as dt
 from pandas_datareader import data as pdr
 import yfinance as yf
-from functions import mc_pareto_simulations, stock_simulations, get_input_stocks, verify_model, plot_dividents
-
-
-def start_up():
-    print("Welcome to this Monte Carlo Simulator program. To browse the availabe stocck, pleas visit:  https://finance.yahoo.com/ . The stock ticker is located behind the company name, Apple (AAPL).")
-    return
-
-def menu():
-    print("1. Analyse Paretos model portefolio")
-    print("2. Choose your own stocks")
-    print("3. Test the model")
-    print("4. Plot dividents from stock")
-
-    user_input = input("Choice: ")
-
-    try:
-        val = int(user_input)
-
-    except:
-        print("Please choose a valid choice!")
-        print('\n')
-        menu()
-
-    if int(user_input) == 1:
-        mc_pareto_simulations()
-        return 1
-
-    elif int(user_input) == 2:
-        return 2
-    
-    elif int(user_input) == 3:
-        return 3
-    
-    elif int(user_input) == 4:
-        return 4
-
-    else:
-        print("You have not chosen a valid choice. Please choose a valid choice!")
-        menu()
+from functions import mc_pareto_simulations, stock_simulations, get_input_stocks, verify_model, plot_dividents, start_up, menu, main
 
 start_up()
-
-
-def main():
-    user_input = menu()
-
-    if user_input == 1:
-        mc_pareto_simulations
-
-    elif user_input == 2:
-        stocks = get_input_stocks()
-        stock_simulations(stocks)
-
-    elif user_input == 3:
-        stocks = get_input_stocks()
-        verify_model(stocks)
-
-    elif user_input == 4:
-        stocks = get_input_stocks()
-        plot_dividents(stocks)
-
-    main()
-
-
-    
+ 
 main()

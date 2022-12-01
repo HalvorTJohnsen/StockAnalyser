@@ -6,6 +6,42 @@ from pandas_datareader import data as pdr
 import yfinance as yf
 from dateutil.relativedelta import relativedelta
 
+
+import warnings
+warnings.filterwarnings('ignore')
+
+def start_up():
+    print('\n')
+    print('\n')
+    print("Welcome to this Monte Carlo Simulator program. To browse the availabe stocck, pleas visit:  https://finance.yahoo.com/ . The stock ticker is located behind the company name, Apple (AAPL).")
+    return
+
+def menu():
+    menu_list = [1,2,3,4,5]
+
+    print("1. Analyse Paretos model portefolio")
+    print("2. Choose your own stocks")
+    print("3. Test the model")
+    print("4. Plot dividents from stock")
+    print("5. Use machine learning to predict tomorrows stock price")
+
+    user_input = input("Choice: ")
+
+    try:
+        val = int(user_input)
+
+    except:
+        print("Please choose a valid choice!")
+        print('\n')
+        menu()
+
+    if int(user_input) in menu_list:
+        return int(user_input)
+
+    else:
+        print("You have not chosen a valid choice. Please choose a valid choice!")
+        menu()
+
 def mc_pareto_simulations():
     def get_data(stocks, start, end):
         stockData = pdr.get_data_yahoo(stocks, start, end)
@@ -205,6 +241,7 @@ def stock_simulations(stock_input):
         return
 
 def get_input_stocks():
+    n = 0
     stocks = []
     user_input_2 = input("How many stocks would you like to analyse? ")
 
@@ -215,23 +252,21 @@ def get_input_stocks():
         print("Please enter a real number!")
         get_input_stocks()
 
-    for i in range(0, int(user_input_2)):
+    while n < int(user_input_2):
         stock = input("Enter your stock ticker: ")
         try:
             val = pdr.get_data_yahoo(stock)
+            stocks.append(stock.upper())
+            n += 1
         except:
             print("The ticker does not exist!")
-            get_input_stocks()
-
-
-        stocks.append(stock.upper())
 
 
     print("You have selected: ", [stock for stock in stocks])
 
     confirm = str(input("Is this correct? [Y/n] "))
 
-    if confirm == "Y":
+    if confirm == "y" or confirm == '' or confirm == 'Y':
         return stocks
 
     else:
@@ -306,7 +341,160 @@ def verify_model(input_stocks):
     plt.title('MC simulation of a stock portfolio, ' + print_list)
     plt.show()
 
+def ml_stock_predictor(input_stock):
+    import sklearn
+    import pandas_datareader as web
+    import datetime as dt
+    import yfinance as yf
+
+    from sklearn.preprocessing import MinMaxScaler
+    from tensorflow import keras
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout, LSTM
+
+    import warnings
+    warnings.filterwarnings('ignore')
+
+
+    company = input_stock[0]
+
+    ticker = yf.Ticker(company)
+    ticker_info = ticker.info
+
+    start = dt.datetime(2009, 1, 1)
+    end = dt.datetime(2021, 2, 1)
+    
+    data = web.DataReader(company, 'yahoo', start, end)
+
+    ### Preparing the data
+
+    scaler = MinMaxScaler(feature_range=(0, 1))
+
+    ## Scaling just the closing value after the market have been closed
+
+    scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1, 1))
+    
+    prediction_days = 90
+
+    x_train = []
+    y_train = []
+
+    for x in range(prediction_days, len(scaled_data)):
+        x_train.append(scaled_data[x-prediction_days:x, 0])
+        y_train.append(scaled_data[x, 0])
+
+    ## Converting into numpy array
+
+    x_train, y_train = np.array(x_train), np.array(y_train)
+    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+
+    ## Building the model
+
+    model = Sequential()
+
+    model.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+    model.add(Dropout(0.2))
+    model.add(LSTM(units=50, return_sequences=True))
+    model.add(Dropout(0.2))
+    model.add(LSTM(units=50))
+    model.add(Dropout(0.2))
+    model.add(Dense(units=1))  ## Prediction of the next closing price
+
+    model.compile(optimizer='Adam', loss='mean_squared_error')
+    model.fit(x_train, y_train, epochs=25, batch_size=32)
+
+    ''' Testing the mode '''
+
+    ## Loading the test data
+
+    test_start = dt.datetime(2021, 2, 1)
+    test_end = dt.datetime.now()
+
+    test_data = web.DataReader(company, 'yahoo', test_start, test_end)
+    actual_price = test_data['Close'].values
+
+    ## Concatinating the close values of the train data and the test data
+
+    total_data = pd.concat((data['Close'], test_data['Close']), axis=0)
+
+    model_inputs = total_data[len(total_data) - len(test_data) - prediction_days:].values
+    model_inputs = model_inputs.reshape(-1, 1)
+    model_inputs = scaler.transform(model_inputs)
+
+    ## Making prediction from the test data
+
+    x_test = []
+
+    for x in range(prediction_days, len(model_inputs)):
+        x_test.append(model_inputs[x-prediction_days:x, 0])
+        
+    ## Converting into numpy array
+    x_test = np.array(x_test)
+    x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+
+    ## Making predictions based on the x_test
+    predicted_price = model.predict(x_test)
+
+    ### Reversing the scaled prices
+    predicted_prices = scaler.inverse_transform(predicted_price)
+
+    ### Plotting the test predictions
+    """
+    plt.plot(actual_price, color='black', label=f'Actual {actual_price} Price')
+    plt.plot(predicted_price, color='green', label=f'Predicted {predicted_price} Price')
+    plt.title(f"{company} Share Price")
+    plt.xlabel("Time")
+    plt.ylabel(f'{company} Share Price')
+    plt.legend()
+    plt.show()"""
+
+    ## Predict the next day
+
+    real_data = [model_inputs[len(model_inputs) + 1 - prediction_days:len(model_inputs+1), 0]]
+    real_data = np.array(real_data)
+    real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
+
+    prediction = model.predict(real_data)
+    prediction = scaler.inverse_transform(prediction)
+
+    price = ticker.info['regularMarketPrice']
+
+    change = (prediction - price)*100 / price
+
+    print(str(ticker_info['shortName']) + " is predicted to close at " + str(prediction) + ". That is a change of " + str(change))
+
+def main():
+    user_input = menu()
+
+    if user_input == 1:
+        mc_pareto_simulations()
+
+    elif user_input == 2:
+        stocks = get_input_stocks()
+        stock_simulations(stocks)
+
+    elif user_input == 3:
+        stocks = get_input_stocks()
+        verify_model(stocks)
+
+    elif user_input == 4:
+        stocks = get_input_stocks()
+        plot_dividents(stocks)
+
+    elif user_input == 5:
+        stocks = get_input_stocks()
+        ml_stock_predictor(stocks)
+
+    main() 
+
 def plot_dividents(input_stocks):   
+    from sklearn.preprocessing import MinMaxScaler
+    from tensorflow import keras
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout, LSTM
+    import sklearn
+    import pandas_datareader as web
+
     TICKER = yf.Ticker(input_stocks[0])
 
     years = int(input("How many years back do you want to colllect information? "))
