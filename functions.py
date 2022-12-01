@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import datetime as dt
 from pandas_datareader import data as pdr
 import yfinance as yf
+from dateutil.relativedelta import relativedelta
 
 def mc_pareto_simulations():
     def get_data(stocks, start, end):
@@ -305,3 +306,23 @@ def verify_model(input_stocks):
     plt.title('MC simulation of a stock portfolio, ' + print_list)
     plt.show()
 
+def plot_dividents(input_stocks):   
+    TICKER = yf.Ticker(input_stocks[0])
+
+    years = int(input("How many years back do you want to colllect information? "))
+    TICKER_INFO = TICKER.info
+
+    TO = dt.datetime.now().strftime("%Y-%m-%d")
+    FROM = (dt.datetime.now() - relativedelta(years=years)).strftime("%Y-%m-%d")
+
+    DIV_HISTORY = TICKER.dividends
+    df = DIV_HISTORY.to_frame()
+    
+    df = df[(df.index > FROM) & (df.index <= TO)]
+    df.reset_index(inplace=True)
+    df = df.rename(columns = {'index':'DATE'})
+    df['Date'] = pd.to_datetime(df['Date']).dt.date
+    
+    df.plot(x="Date", y='Dividends', kind='bar')
+    plt.title("Dividends in " + str((TICKER_INFO['currency'])))
+    plt.show()

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import datetime as dt
 from pandas_datareader import data as pdr
 import yfinance as yf
-from functions import mc_pareto_simulations, stock_simulations, get_input_stocks, verify_model
+from functions import mc_pareto_simulations, stock_simulations, get_input_stocks, verify_model, plot_dividents
 
 
 def start_up():
@@ -15,6 +15,7 @@ def menu():
     print("1. Analyse Paretos model portefolio")
     print("2. Choose your own stocks")
     print("3. Test the model")
+    print("4. Plot dividents from stock")
 
     user_input = input("Choice: ")
 
@@ -31,12 +32,13 @@ def menu():
         return 1
 
     elif int(user_input) == 2:
-        #Run own model
-        print("Kjører")
         return 2
     
     elif int(user_input) == 3:
         return 3
+    
+    elif int(user_input) == 4:
+        return 4
 
     else:
         print("You have not chosen a valid choice. Please choose a valid choice!")
@@ -55,3 +57,7 @@ elif user_input == 2:
 elif user_input == 3:
     stocks = get_input_stocks()
     verify_model(stocks)
+
+elif user_input == 4:
+    stocks = get_input_stocks()
+    plot_dividents(stocks)
