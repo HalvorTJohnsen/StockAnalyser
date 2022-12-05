@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import datetime as dt
 from pandas_datareader import data as pdr
 import yfinance as yf
+from tabulate import tabulate
 from dateutil.relativedelta import relativedelta
 import os
 import warnings
@@ -12,12 +13,14 @@ warnings.filterwarnings('ignore')
 
 def start_up():
     os.system('cls||clear')
-    print("Welcome to this Monte Carlo Simulator program. To browse the availabe stocck, please visit:  https://finance.yahoo.com/ . The stock ticker is located behind the company name, Apple (AAPL).")
+    print("Welcome to this Monte Carlo Simulator program. To browse the available stocks, please visit:  https://finance.yahoo.com/. The stock ticker is located behind the company name, Apple (AAPL).")
     print('\n')
     return
 
+
+# Standard functions
 def menu():
-    menu_list = [1,2,3,4,5, 6, 7]
+    menuList = [1,2,3,4,5,6,7,8]
     print("1. Analyse Paretos model portefolio")
     print("2. Choose your own stocks")
     print("3. Test the model")
@@ -25,19 +28,20 @@ def menu():
     print("5. Use machine learning to predict tomorrows stock price")
     print("6. Plot stock trend history")
     print("7. Clear terminal")
+    print("8. Print stock info")
 
-    user_input = input("Choice: ")
+    choice = input("Choice: ")
 
     try:
-        val = int(user_input)
+        testVal = int(choice)
 
     except:
         print("Please choose a valid choice!")
         print('\n')
         menu()
 
-    if int(user_input) in menu_list:
-        return int(user_input)
+    if int(choice) in menuList:
+        return int(choice)
 
     else:
         print("You have not chosen a valid choice. Please choose a valid choice!")
@@ -54,8 +58,9 @@ def read_txt():
 
     for item in data_into_list: list_to_return.append(item.upper())
     
-    print(list_to_return)
     my_file.close()
+
+    return list_to_return
 
 def mc_pareto_simulations():
     def get_data(stocks, start, end):
@@ -66,14 +71,10 @@ def mc_pareto_simulations():
         covMatrix = returns.cov()
         return meanReturns, covMatrix
 
-
     stockList = ['AKRBP.OL', 'AUSS.OL', 'COOL.OL', 'GJF.OL', 'HAFNI.OL', 'KOG.OL', 'MOWI.OL', 'NORAM.OL', 'NSKOG.OL']
     stocks = [stock for stock in stockList]
     endDate = dt.datetime.now()
     startDate = endDate - dt.timedelta(days=300)
-
-    #endDate = dt.datetime.now() -  dt.timedelta(days=100)
-    #startDate = dt.datetime.now() - dt.timedelta(days=400)
 
     #Calculating actual value of investment 
     def actual_return(stocks, start, end, initial_portifolio):
@@ -156,7 +157,7 @@ def mc_pareto_simulations():
 
         return
 
-def stock_simulations(stock_input):
+def stock_simulations(inputStock):
     def get_data(stocks, start, end):
         stockData = pdr.get_data_yahoo(stocks, start, end)
         stockData = stockData['Close']
@@ -166,13 +167,10 @@ def stock_simulations(stock_input):
         return meanReturns, covMatrix
 
 
-    stockList = stock_input
+    stockList = inputStock
     stocks = [stock for stock in stockList]
     endDate = dt.datetime.now()
     startDate = endDate - dt.timedelta(days=300)
-
-    #endDate = dt.datetime.now() -  dt.timedelta(days=100)
-    #startDate = dt.datetime.now() - dt.timedelta(days=400)
 
     #Calculating actual value of investment 
     def actual_return(stocks, start, end, initial_portifolio):
@@ -258,59 +256,77 @@ def stock_simulations(stock_input):
 def get_input_stocks():
     n = 0
     stocks = []
-    user_input_2 = input("How many stocks would you like to analyse? ")
+    print("1. Choose stocks, and ow many stocks would you like to analyse?")
+    print("2. Import stocks from txt file")
+    choice = input("Choice: ")
 
     try:
-        val = int(user_input_2)
+        val = int(choice)
 
     except ValueError:
-        print("Please enter a real number!")
+        print("Please enter a valid choice!")
         get_input_stocks()
 
-    while n < int(user_input_2):
-        stock = input("Enter your stock ticker: ")
+    if int(choice) == 1:
+        numberOfStocks = input("How many stocks would you like to analyse? ")
+
         try:
-            val = pdr.get_data_yahoo(stock)
-            stocks.append(stock.upper())
-            n += 1
+            val = int(numberOfStocks)
+
         except:
-            print("The ticker does not exist!")
+            print("Enter a real number!")
+            get_input_stocks()
+
+        while n < int(numberOfStocks):
+            stock = input("Enter your stock ticker: ")
+            try:
+                val = pdr.get_data_yahoo(stock)
+                stocks.append(stock.upper())
+                n += 1
+            except:
+                print("The ticker does not exist!")
 
 
-    print("You have selected: ", [stock for stock in stocks])
+        print("You have selected: ", [stock for stock in stocks])
 
-    confirm = str(input("Is this correct? [Y/n] "))
+        confirm = str(input("Is this correct? [Y/n] "))
 
-    if confirm == "y" or confirm == '' or confirm == 'Y':
-        return stocks
+        if confirm == "y" or confirm == '' or confirm == 'Y':
+            return stocks
+
+        else:
+            get_input_stocks() 
+    
+    elif int(choice) == 2:
+        txtStockList = read_txt()
+
+        return txtStockList
 
     else:
         get_input_stocks()
 
 def get_input_stock():
     n = 0
-    stocks = []
     while n < 1:
         stock = input("Enter your stock ticker: ")
         try:
-            val = pdr.get_data_yahoo(stock)
-            stocks.append(stock.upper())
+            testVal = pdr.get_data_yahoo(stock)
             n += 1
         except:
             print("The ticker does not exist!")
 
 
-    print("You have selected: ", [stock for stock in stocks])
+    print("You have selected: ", str(stock).upper())
 
     confirm = str(input("Is this correct? [Y/n] "))
 
     if confirm == "y" or confirm == '' or confirm == 'Y':
-        return stock[0]
+        return stock.upper()
 
     else:
         get_input_stocks()
 
-def verify_model(input_stocks):
+def verify_model(inputStock):
     def get_data(stocks, start, end):
         stockData = pdr.get_data_yahoo(stocks, start, end)
         stockData = stockData['Close']
@@ -319,7 +335,7 @@ def verify_model(input_stocks):
         covMatrix = returns.cov()
         return meanReturns, covMatrix
 
-    stockList = input_stocks
+    stockList = inputStock
     stocks = [stock for stock in stockList]
 
     user_input = input("Over which period of time would you like to like to test the model? ")
@@ -379,7 +395,7 @@ def verify_model(input_stocks):
     plt.title('MC simulation of a stock portfolio, ' + print_list)
     plt.show()
 
-def ml_stock_predictor(input_stock):
+def ml_stock_predictor(inputStock):
     import sklearn
     import pandas_datareader as web
     import datetime as dt
@@ -394,7 +410,7 @@ def ml_stock_predictor(input_stock):
     warnings.filterwarnings('ignore')
 
 
-    company = input_stock[0]
+    company = inputStock
 
     ticker = yf.Ticker(company)
     ticker_info = ticker.info
@@ -501,35 +517,35 @@ def ml_stock_predictor(input_stock):
 
     print(str(ticker_info['shortName']) + " is predicted to close at " + str(prediction) + ". That is a change of " + str(change))
 
-def plot_dividents(input_stocks):   
+def plot_dividents(inputStock):   
 
-    TICKER = yf.Ticker(input_stocks[0])
+    stock = yf.Ticker(inputStock)
 
-    years = int(input("How many years back do you want to colllect information? "))
-    TICKER_INFO = TICKER.info
+    yearsToSimulate = int(input("How many years back do you want to colllect information? "))
+    stockInfo = stock.info
 
-    TO = dt.datetime.now().strftime("%Y-%m-%d")
-    FROM = (dt.datetime.now() - relativedelta(years=years)).strftime("%Y-%m-%d")
+    simulateTo = dt.datetime.now().strftime("%Y-%m-%d")
+    simulateFrom = (dt.datetime.now() - relativedelta(years=yearsToSimulate)).strftime("%Y-%m-%d")
 
-    DIV_HISTORY = TICKER.dividends
-    df = DIV_HISTORY.to_frame()
+    stockHistory = stock.dividends
+    df = stockHistory.to_frame()
     
-    df = df[(df.index > FROM) & (df.index <= TO)]
+    df = df[(df.index > simulateFrom) & (df.index <= simulateTo)]
     df.reset_index(inplace=True)
     df = df.rename(columns = {'index':'DATE'})
     df['Date'] = pd.to_datetime(df['Date']).dt.date
     
     df.plot(x="Date", y='Dividends', kind='bar')
-    plt.title("Dividends in " + str((TICKER_INFO['currency'])))
+    plt.title("Dividends in " + str((stockInfo['currency'])))
     plt.show()
 
-def plot_stock_history(input_stocks):
-    tickers_list = input_stocks
+def plot_stock_history(inputStock):
+    stock = inputStock
 
-    data = yf.download(tickers_list,'2015-1-1')['Adj Close']
+    stockData = yf.download(stock,'2015-1-1')['Adj Close']
 
         # Plot all the close prices
-    ((data.pct_change()+1).cumprod()).plot(figsize=(10, 7))
+    ((stockData.pct_change()+1).cumprod()).plot(figsize=(10, 7))
 
     # Show the legend
     plt.legend()
@@ -548,34 +564,68 @@ def plot_stock_history(input_stocks):
 def clear_window():
     os.system('cls||clear')
 
-def main():
-    user_input = menu()
+def get_ticker_info(input_stock):
+    clear_window()
+    stock = yf.Ticker(input_stock)
+    stockInfo = stock.info
 
-    if user_input == 1:
+    longBusinessSummary = stockInfo['longBusinessSummary']
+    print(stockInfo, '\n')
+    table = [['Operating Margins', 'Ebitda Margins', 'Gross Margins', 'Profit Margins'], [stockInfo['operatingMargins'], stockInfo['ebitdaMargins'], stockInfo['grossMargins'], stockInfo['profitMargins']]]
+    print(tabulate(table, tablefmt='fancy_grid'))
+
+    today = dt.datetime.now()
+
+    oneWeekStockData = stock.history(start=today - dt.timedelta(days=7))['Close']
+    oneMonthStockData = stock.history(start=today - dt.timedelta(days=30))['Close']
+    sixMonthStockData = stock.history(start=today - dt.timedelta(days=180))['Close']
+    oneYearStockData = stock.history(start=today - dt.timedelta(days=356))['Close']
+    threeYearStockData = stock.history(start=today - dt.timedelta(days=365*3))['Close']
+    fiveYearStockData = stock.history(start=today - dt.timedelta(days=5*356))['Close']
+
+    oneWeekPrecetageChange = (oneWeekStockData[-1] - oneWeekStockData[0])*100/oneWeekStockData[-1]
+    oneMonthPrecentageChange = (oneMonthStockData[-1] - oneMonthStockData[0])*100/oneMonthStockData[-1]
+    sixMonthPrecentageChange = (sixMonthStockData[-1] - sixMonthStockData[0])*100/sixMonthStockData[-1]
+    oneYearPrecentageChange  = (oneYearStockData[-1] - oneYearStockData[0])*100/oneYearStockData[-1]
+    threeYearPrecentageChange = (threeYearStockData[-1] - threeYearStockData[0])*100/threeYearStockData[-1]
+    fiveYearStockDataChange = (fiveYearStockData[-1] - fiveYearStockData[0])*100/fiveYearStockData[-1]
+
+
+    table_1 = [['1 Week (%)', '1 Month (%)', '6 Months (%)', '1 year (%)', '3 Years (%)', '5 Years (%)'], [round(oneMonthPrecentageChange, 3), round(oneMonthPrecentageChange,3), round(sixMonthPrecentageChange, 3), round(oneWeekPrecetageChange, 3), round(threeYearPrecentageChange,3), round(fiveYearStockDataChange,3)]]
+    print('\n')
+    print(tabulate(table_1, tablefmt='fancy_grid'))
+
+def main():
+    choice = menu()
+
+    if choice == 1:
         mc_pareto_simulations()
 
-    elif user_input == 2:
+    elif choice == 2:
         stocks = get_input_stocks()
         stock_simulations(stocks)
 
-    elif user_input == 3:
+    elif choice == 3:
         stocks = get_input_stocks()
         verify_model(stocks)
 
-    elif user_input == 4:
+    elif choice == 4:
         stocks = get_input_stock()
         plot_dividents(stocks)
 
-    elif user_input == 5:
+    elif choice == 5:
         stocks = get_input_stock()
         ml_stock_predictor(stocks)
 
-    elif user_input == 6:
+    elif choice == 6:
         stocks = get_input_stocks()
         plot_stock_history(stocks)
 
-    elif user_input == 7:
+    elif choice == 7:
         clear_window()
 
+    elif choice == 8:
+        stocks = get_input_stock()
+        get_ticker_info(stocks)
 
     main()
