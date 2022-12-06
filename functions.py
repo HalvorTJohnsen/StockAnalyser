@@ -17,18 +17,16 @@ def start_up():
     print('\n')
     return
 
-
-# Standard functions
 def menu():
-    menuList = [1,2,3,4,5,6,7,8]
-    print("1. Analyse Paretos model portefolio")
-    print("2. Choose your own stocks")
-    print("3. Test the model")
-    print("4. Plot dividents from stock")
-    print("5. Use machine learning to predict tomorrows stock price")
-    print("6. Plot stock trend history")
+    menuList = [1,2,3,4,5,6,7]
+
+    print("1. Monte Carlo Simulator")
+    print("2. Test the Monte Carlo model")
+    print("3. Plot dividents from stock")
+    print("4. Predict tomorrows stock price with machine learning")
+    print("5. Plot stock trend history")
+    print("6. Print stock info")
     print("7. Clear terminal")
-    print("8. Print stock info")
 
     choice = input("Choice: ")
 
@@ -48,116 +46,21 @@ def menu():
         menu()
 
 def read_txt():
-    my_file = open("ownportifolio.txt", "r")
+    portifolioTxt = open("portifolio.txt", "r")
 
-    data = my_file.read()
+    portifolioStocks = portifolioTxt.read()
 
-    data_into_list = data.split('\n')
+    stocksIntoList = portifolioStocks.split('\n')
 
-    list_to_return = []
+    stockListToReturn = []
 
-    for item in data_into_list: list_to_return.append(item.upper())
+    for item in stockListToReturn: stockListToReturn.append(item.upper())
     
-    my_file.close()
+    portifolioTxt.close()
 
-    return list_to_return
+    return stockListToReturn
 
-def mc_pareto_simulations():
-    def get_data(stocks, start, end):
-        stockData = pdr.get_data_yahoo(stocks, start, end)
-        stockData = stockData['Close']
-        returns = stockData.pct_change()
-        meanReturns = returns.mean()
-        covMatrix = returns.cov()
-        return meanReturns, covMatrix
-
-    stockList = ['AKRBP.OL', 'AUSS.OL', 'COOL.OL', 'GJF.OL', 'HAFNI.OL', 'KOG.OL', 'MOWI.OL', 'NORAM.OL', 'NSKOG.OL']
-    stocks = [stock for stock in stockList]
-    endDate = dt.datetime.now()
-    startDate = endDate - dt.timedelta(days=300)
-
-    #Calculating actual value of investment 
-    def actual_return(stocks, start, end, initial_portifolio):
-        stockData = pdr.get_data_yahoo(stocks, end, dt.datetime.now())
-        stockData = stockData['Close']
-        change = (stockData.iloc[-1, 0] - stockData.iloc[0, 0])/(stockData.iloc[0,0])
-        initial_portifolio = initial_portifolio * (1 + change)
-        pct_change = 100 * change
-        print("Change in %: " + str(pct_change))
-        return initial_portifolio
-    meanReturns, covMatrix = get_data(stocks, startDate, endDate)
-    weights = np.random.random(len(meanReturns))
-    weights /= np.sum(weights)
-
-    # Monte Carlo Method
-    mc_sims = int(input("How many simulations would you like? ")) # number of simulations
-    T = int(input("What time period would you like to simulate? ")) #timeframe in days
-    meanM = np.full(shape=(T, len(weights)), fill_value=meanReturns)
-    meanM = meanM.T
-    portfolio_sims = np.full(shape=(T, mc_sims), fill_value=0.0)
-    initialPortfolio = 10000
-    for m in range(0, mc_sims):
-        Z = np.random.normal(size=(T, len(weights)))#uncorrelated RV's
-        L = np.linalg.cholesky(covMatrix) #Cholesky decomposition to Lower Triangular Matrix
-        dailyReturns = meanM + np.inner(L, Z) #Correlated daily returns for individual stocks
-        portfolio_sims[:,m] = np.cumprod(np.inner(weights, dailyReturns.T)+1)*initialPortfolio
-
-    start_value = initialPortfolio / 10
-    histogram_array = [] 
-
-    for value in portfolio_sims:
-        histogram_array.append(np.round(value, -2))
-
-    histogram_array = histogram_array[len(histogram_array) - 1]
-
-    bins_list = np.unique(histogram_array)
-
-    print_list = ', '.join(stockList)
-
-    print("1. Plot histogram")
-    print("2. Print stock charts")
-    print("3. Print both")
-
-    user_input = int(input("Choice: "))
-
-
-    if user_input == 1:
-        plt.hist(histogram_array, bins = bins_list, edgecolor = 'black')
-        plt.axvline(initialPortfolio, color='red', linestyle='dashed', linewidth=1)
-        #plt.axvline(actual_return(stocks, startDate, endDate, initialPortfolio), color = 'green', linewidth = 1)
-        plt.ylabel('Frequensy')
-        plt.xlabel('Portifolio Value rounded ($)')
-        plt.title('MC simulation of a stock portfolio, ' + print_list)
-        plt.show()
-        return
-
-    elif user_input == 2:
-        plt.plot(portfolio_sims)
-        plt.ylabel('Portfolio Value ($)')
-        plt.xlabel('Days')
-        plt.title('MC simulation of a stock portfolio ' + stockList[0])
-        plt.show()
-        actual_return(stocks, startDate, endDate)
-        return
-
-    elif user_input == 3:
-        plt.hist(histogram_array, bins = bins_list, edgecolor = 'black')
-        plt.axvline(initialPortfolio, color='red', linestyle='dashed', linewidth=1)
-        #plt.axvline(actual_return(stocks, startDate, endDate, initialPortfolio), color = 'green', linewidth = 1)
-        plt.ylabel('Frequensy')
-        plt.xlabel('Portifolio Value rounded ($)')
-        plt.title('MC simulation of a stock portfolio, ' + print_list)
-        plt.show()
-
-        plt.plot(portfolio_sims)
-        plt.ylabel('Portfolio Value ($)')
-        plt.xlabel('Days')
-        plt.title('MC simulation of a stock portfolio ' + print_list)
-        plt.show()
-
-        return
-
-def stock_simulations(inputStock):
+def mc_simulation(inputStock):
     def get_data(stocks, start, end):
         stockData = pdr.get_data_yahoo(stocks, start, end)
         stockData = stockData['Close']
@@ -258,6 +161,7 @@ def get_input_stocks():
     stocks = []
     print("1. Choose stocks, and ow many stocks would you like to analyse?")
     print("2. Import stocks from txt file")
+    print("3. Load Pareto model portifolio")
     choice = input("Choice: ")
 
     try:
@@ -301,6 +205,11 @@ def get_input_stocks():
         txtStockList = read_txt()
 
         return txtStockList
+    
+    elif int(choice) == 3:
+        paretoModelPortifolioList = load_pareto_portifolio()
+        
+        return paretoModelPortifolioList
 
     else:
         get_input_stocks()
@@ -564,68 +473,86 @@ def plot_stock_history(inputStock):
 def clear_window():
     os.system('cls||clear')
 
-def get_ticker_info(input_stock):
+def get_ticker_info(inputStock):
     clear_window()
-    stock = yf.Ticker(input_stock)
+    stock = yf.Ticker(inputStock)
     stockInfo = stock.info
 
     longBusinessSummary = stockInfo['longBusinessSummary']
-    print(stockInfo, '\n')
-    table = [['Operating Margins', 'Ebitda Margins', 'Gross Margins', 'Profit Margins'], [stockInfo['operatingMargins'], stockInfo['ebitdaMargins'], stockInfo['grossMargins'], stockInfo['profitMargins']]]
-    print(tabulate(table, tablefmt='fancy_grid'))
 
-    today = dt.datetime.now()
+    today = dt.date.today()
 
-    oneWeekStockData = stock.history(start=today - dt.timedelta(days=7))['Close']
-    oneMonthStockData = stock.history(start=today - dt.timedelta(days=30))['Close']
-    sixMonthStockData = stock.history(start=today - dt.timedelta(days=180))['Close']
-    oneYearStockData = stock.history(start=today - dt.timedelta(days=356))['Close']
-    threeYearStockData = stock.history(start=today - dt.timedelta(days=365*3))['Close']
-    fiveYearStockData = stock.history(start=today - dt.timedelta(days=5*356))['Close']
+    oneWeekStockData = stock.history(start=today - relativedelta(days=5))['Close']
+    oneMonthStockData = stock.history(start=today - relativedelta(months=1))['Close']
+    sixMonthStockData = stock.history(start=today - relativedelta(months=6))['Close']
+    oneYearStockData = stock.history(start=today - relativedelta(years=1))['Close']
+    threeYearStockData = stock.history(start=today - relativedelta(years=3))['Close']
+    fiveYearStockData = stock.history(start=today - relativedelta(years=5))['Close']
 
-    oneWeekPrecetageChange = (oneWeekStockData[-1] - oneWeekStockData[0])*100/oneWeekStockData[-1]
-    oneMonthPrecentageChange = (oneMonthStockData[-1] - oneMonthStockData[0])*100/oneMonthStockData[-1]
-    sixMonthPrecentageChange = (sixMonthStockData[-1] - sixMonthStockData[0])*100/sixMonthStockData[-1]
-    oneYearPrecentageChange  = (oneYearStockData[-1] - oneYearStockData[0])*100/oneYearStockData[-1]
-    threeYearPrecentageChange = (threeYearStockData[-1] - threeYearStockData[0])*100/threeYearStockData[-1]
-    fiveYearStockDataChange = (fiveYearStockData[-1] - fiveYearStockData[0])*100/fiveYearStockData[-1]
+    oneWeekPrecetageChange = (oneWeekStockData[-1] - oneWeekStockData[0])*100/oneWeekStockData[0]
+    oneMonthPrecentageChange = (oneMonthStockData[-1] - oneMonthStockData[0])*100/oneMonthStockData[0]
+    sixMonthPrecentageChange = (sixMonthStockData[-1] - sixMonthStockData[0])*100/sixMonthStockData[0]
+    oneYearPrecentageChange  = (oneYearStockData[-1] - oneYearStockData[0])*100/oneYearStockData[0]
+    threeYearPrecentageChange = (threeYearStockData[-1] - threeYearStockData[0])*100/threeYearStockData[0]
+    fiveYearStockDataChange = (fiveYearStockData[-1] - fiveYearStockData[0])*100/fiveYearStockData[0]
 
 
-    table_1 = [['1 Week (%)', '1 Month (%)', '6 Months (%)', '1 year (%)', '3 Years (%)', '5 Years (%)'], [round(oneMonthPrecentageChange, 3), round(oneMonthPrecentageChange,3), round(sixMonthPrecentageChange, 3), round(oneWeekPrecetageChange, 3), round(threeYearPrecentageChange,3), round(fiveYearStockDataChange,3)]]
+    summaryTable1 = [['Previous Close', 'Open', 'Bid', 'Ask', 'Day\'s Range', '52 Week Range', 'Volume', 'Avg. Volume'], [stockInfo['previousClose'], stockInfo['open'], str(stockInfo['bid']) + str(" x ") + str(stockInfo['bidSize']), str(stockInfo['ask']) + str(" x ") + str(stockInfo['askSize']), str(round(stockInfo['dayLow'], 2)) + str(' - ') + str(round(stockInfo['dayHigh'], 2)), str(round(stockInfo['fiftyTwoWeekLow'], 2)) + str(" - ") + str(round(stockInfo['fiftyTwoWeekHigh'], 2)), stockInfo['volume'], stockInfo['averageVolume']]]
+
+    stockChangeTable = [['1 Week (%)', '1 Month (%)', '6 Months (%)', '1 year (%)', '3 Years (%)', '5 Years (%)'], [round(oneWeekPrecetageChange, 3), round(oneMonthPrecentageChange,3), round(sixMonthPrecentageChange, 3), round(oneYearPrecentageChange, 3), round(threeYearPrecentageChange,3), round(fiveYearStockDataChange,3)]]
+
+    marginsTable = [['Operating Margins', 'Ebitda Margins', 'Gross Margins', 'Profit Margins'], [stockInfo['operatingMargins'], stockInfo['ebitdaMargins'], stockInfo['grossMargins'], stockInfo['profitMargins']]]
+
+    print(longBusinessSummary)
     print('\n')
-    print(tabulate(table_1, tablefmt='fancy_grid'))
+    print(tabulate(summaryTable1, tablefmt='fancy_grid'))
+    print('\n')
+    print(tabulate(marginsTable, tablefmt='fancy_grid'))
+    print('\n')
+    print(tabulate(stockChangeTable, tablefmt='fancy_grid'))
+    print('\n')
+
+    while True:
+        closeWindow = input("Enter the command \"close\" to close view. ")
+
+        if closeWindow == "close" or closeWindow == "Close":
+            return
+
+def load_pareto_portifolio():
+    stockList = ['AKRBP.OL', 'AUSS.OL', 'COOL.OL', 'GJF.OL', 'HAFNI.OL', 'KOG.OL', 'MOWI.OL', 'NORAM.OL', 'NSKOG.OL']
+    return stockList
 
 def main():
     choice = menu()
 
     if choice == 1:
-        mc_pareto_simulations()
+        stocks = get_input_stocks()
+        mc_simulation(stocks)
 
     elif choice == 2:
         stocks = get_input_stocks()
-        stock_simulations(stocks)
-
-    elif choice == 3:
-        stocks = get_input_stocks()
         verify_model(stocks)
 
-    elif choice == 4:
+    elif choice == 3:
         stocks = get_input_stock()
         plot_dividents(stocks)
 
-    elif choice == 5:
+    elif choice == 4:
         stocks = get_input_stock()
         ml_stock_predictor(stocks)
 
-    elif choice == 6:
+    elif choice == 5:
         stocks = get_input_stocks()
         plot_stock_history(stocks)
+
+    elif choice == 6:
+        stocks = get_input_stock()
+        get_ticker_info(stocks)
 
     elif choice == 7:
         clear_window()
 
-    elif choice == 8:
-        stocks = get_input_stock()
-        get_ticker_info(stocks)
 
+    clear_window()
+    start_up()
     main()
