@@ -17,8 +17,22 @@ def start_up():
     print('\n')
     return
 
+def read_settings_json():
+    import json
+
+    settingsList =  []
+    with open("settings.json", "r", encoding="utf-8") as f:
+        settings = json.load(f)
+
+    settingsList.append(settings['monte_carlo_simulations_settings']['get_data_from'])
+    settingsList.append(settings['monte_carlo_simulations_settings']['initial_portifolio'])
+
+    f.close()
+
+    return settingsList
+
 def menu():
-    menuList = [1,2,3,4,5,6,7]
+    menuList = [1,2,3,4,5,6,7, 8]
 
     print("1. Monte Carlo Simulator")
     print("2. Test the Monte Carlo model")
@@ -27,6 +41,8 @@ def menu():
     print("5. Plot stock trend history")
     print("6. Print stock info")
     print("7. Clear terminal")
+    print('\n')
+    print("8. Edit values for the Monte Carlo Simulator")
 
     choice = input("Choice: ")
 
@@ -69,11 +85,12 @@ def mc_simulation(inputStock):
         covMatrix = returns.cov()
         return meanReturns, covMatrix
 
+    settingsList = read_settings_json()
 
     stockList = inputStock
     stocks = [stock for stock in stockList]
     endDate = dt.datetime.now()
-    startDate = endDate - dt.timedelta(days=300)
+    startDate = endDate - dt.timedelta(days=int(settingsList[0]))
 
     #Calculating actual value of investment 
     def actual_return(stocks, start, end, initial_portifolio):
@@ -94,14 +111,13 @@ def mc_simulation(inputStock):
     meanM = np.full(shape=(T, len(weights)), fill_value=meanReturns)
     meanM = meanM.T
     portfolio_sims = np.full(shape=(T, mc_sims), fill_value=0.0)
-    initialPortfolio = 10000
+    initialPortfolio = (settingsList[1])
     for m in range(0, mc_sims):
         Z = np.random.normal(size=(T, len(weights)))#uncorrelated RV's
         L = np.linalg.cholesky(covMatrix) #Cholesky decomposition to Lower Triangular Matrix
         dailyReturns = meanM + np.inner(L, Z) #Correlated daily returns for individual stocks
         portfolio_sims[:,m] = np.cumprod(np.inner(weights, dailyReturns.T)+1)*initialPortfolio
 
-    start_value = initialPortfolio / 10
     histogram_array = [] 
 
     for value in portfolio_sims:
@@ -123,7 +139,6 @@ def mc_simulation(inputStock):
     if user_input == 1:
         plt.hist(histogram_array, bins = bins_list, edgecolor = 'black')
         plt.axvline(initialPortfolio, color='red', linestyle='dashed', linewidth=1)
-        #plt.axvline(actual_return(stocks, startDate, endDate, initialPortfolio), color = 'green', linewidth = 1)
         plt.ylabel('Frequensy')
         plt.xlabel('Portifolio Value rounded ($)')
         plt.title('MC simulation of a stock portfolio, ' + print_list)
@@ -142,7 +157,6 @@ def mc_simulation(inputStock):
     elif user_input == 3:
         plt.hist(histogram_array, bins = bins_list, edgecolor = 'black')
         plt.axvline(initialPortfolio, color='red', linestyle='dashed', linewidth=1)
-        #plt.axvline(actual_return(stocks, startDate, endDate, initialPortfolio), color = 'green', linewidth = 1)
         plt.ylabel('Frequensy')
         plt.xlabel('Portifolio Value rounded ($)')
         plt.title('MC simulation of a stock portfolio, ' + print_list)
@@ -159,7 +173,7 @@ def mc_simulation(inputStock):
 def get_input_stocks():
     n = 0
     stocks = []
-    print("1. Choose stocks, and ow many stocks would you like to analyse?")
+    print("1. Choose stocks, and how many stocks would you like to analyse?")
     print("2. Import stocks from txt file")
     print("3. Load Pareto model portifolio")
     choice = input("Choice: ")
@@ -522,6 +536,57 @@ def load_pareto_portifolio():
     stockList = ['AKRBP.OL', 'AUSS.OL', 'COOL.OL', 'GJF.OL', 'HAFNI.OL', 'KOG.OL', 'MOWI.OL', 'NORAM.OL', 'NSKOG.OL']
     return stockList
 
+def edit_settings():
+    import json
+
+    settingsList =  []
+    with open("settings.json", "r", encoding="utf-8") as g:
+        settings = json.load(g)
+        
+        print("Current settings:")
+        print("Collected data from (Days): " + str(settings['monte_carlo_simulations_settings']['get_data_from']))
+        print("Initial portifolio (USD): " + str(settings['monte_carlo_simulations_settings']['initial_portifolio']))
+        print('\n')
+        print("1. Edit the period for data collection")
+        print("2. Edit the initial porifolio")
+
+    g.close()
+
+    global choice
+
+    while True:
+        validChoices = [1,2]
+        choice = input("Choice: ")
+
+        try:
+            val = int(choice)
+            if int(choice) in validChoices: break
+        
+        except:
+            print("Enter a valid choice!")
+
+
+    with open("settings.json", "r+", encoding="utf-8") as f:
+        settings = json.load(f)
+
+        if int(choice) == 1:
+            newDataRange = int(input("New value:"))
+            settings['monte_carlo_simulations_settings']['get_data_from'] = newDataRange
+
+            f.seek(0)
+            json.dump(settings, f)
+            f.truncate()
+        
+        if int(choice) == 2:
+            newDataRange = int(input("New value:"))
+            settings['monte_carlo_simulations_settings']['initial_portifolio'] = newDataRange
+
+            f.seek(0)
+            json.dump(settings, f)
+            f.truncate()
+
+    f.close()
+
 def main():
     choice = menu()
 
@@ -552,7 +617,12 @@ def main():
     elif choice == 7:
         clear_window()
 
+    elif choice == 8:
+        clear_window()
+        edit_settings()
+
 
     clear_window()
     start_up()
     main()
+
