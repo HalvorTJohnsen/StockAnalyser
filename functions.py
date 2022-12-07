@@ -11,13 +11,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def start_up():
+def startUp():
     os.system('cls||clear')
     print("Welcome to this Monte Carlo Simulator program. To browse the available stocks, please visit:  https://finance.yahoo.com/. The stock ticker is located behind the company name, Apple (AAPL).")
     print('\n')
     return
 
-def read_settings_json():
+def readSettingsFromJson():
     import json
 
     settingsList =  []
@@ -44,24 +44,22 @@ def menu():
     print('\n')
     print("8. Edit values for the Monte Carlo Simulator")
 
-    choice = input("Choice: ")
+    while True:
+        choice = input("Choice: ")
 
-    try:
-        testVal = int(choice)
+        try:
+            testVal = int(choice)
+            if int(choice) in menuList:
+                return int(choice)
 
-    except:
-        print("Please choose a valid choice!")
-        print('\n')
-        menu()
+            else:
+                print("You have not chosen a valid choice. Please choose a valid choice!")
 
-    if int(choice) in menuList:
-        return int(choice)
 
-    else:
-        print("You have not chosen a valid choice. Please choose a valid choice!")
-        menu()
+        except:
+            print("Please choose a valid choice!")
 
-def read_txt():
+def readPortifolioFromTxt():
     portifolioTxt = open("portifolio.txt", "r")
 
     portifolioStocks = portifolioTxt.read()
@@ -76,7 +74,7 @@ def read_txt():
 
     return stockListToReturn
 
-def mc_simulation(inputStock):
+def monteCarloSimulation(inputStock):
     def get_data(stocks, start, end):
         stockData = pdr.get_data_yahoo(stocks, start, end)
         stockData = stockData['Close']
@@ -85,7 +83,7 @@ def mc_simulation(inputStock):
         covMatrix = returns.cov()
         return meanReturns, covMatrix
 
-    settingsList = read_settings_json()
+    settingsList = readSettingsFromJson()
 
     stockList = inputStock
     stocks = [stock for stock in stockList]
@@ -170,7 +168,7 @@ def mc_simulation(inputStock):
 
         return
 
-def get_input_stocks():
+def getInputStocksFromTerminal():
     n = 0
     stocks = []
     print("1. Choose stocks, and how many stocks would you like to analyse?")
@@ -183,7 +181,7 @@ def get_input_stocks():
 
     except ValueError:
         print("Please enter a valid choice!")
-        get_input_stocks()
+        getInputStockFromTerminal()
 
     if int(choice) == 1:
         numberOfStocks = input("How many stocks would you like to analyse? ")
@@ -193,7 +191,7 @@ def get_input_stocks():
 
         except:
             print("Enter a real number!")
-            get_input_stocks()
+            getInputStockFromTerminal()
 
         while n < int(numberOfStocks):
             stock = input("Enter your stock ticker: ")
@@ -213,22 +211,22 @@ def get_input_stocks():
             return stocks
 
         else:
-            get_input_stocks() 
+            getInputStockFromTerminal() 
     
     elif int(choice) == 2:
-        txtStockList = read_txt()
+        txtStockList = readPortifolioFromTxt()
 
         return txtStockList
     
     elif int(choice) == 3:
-        paretoModelPortifolioList = load_pareto_portifolio()
+        paretoModelPortifolioList = loadParetoPortifolio()
         
         return paretoModelPortifolioList
 
     else:
-        get_input_stocks()
+        getInputStockFromTerminal()
 
-def get_input_stock():
+def getInputStockFromTerminal():
     n = 0
     while n < 1:
         stock = input("Enter your stock ticker: ")
@@ -247,9 +245,9 @@ def get_input_stock():
         return stock.upper()
 
     else:
-        get_input_stocks()
+        getInputStockFromTerminal()
 
-def verify_model(inputStock):
+def testMonteCarloSimulation(inputStock):
     def get_data(stocks, start, end):
         stockData = pdr.get_data_yahoo(stocks, start, end)
         stockData = stockData['Close']
@@ -267,7 +265,7 @@ def verify_model(inputStock):
         val = int(user_input)
 
     except:
-        verify_model()
+        testMonteCarloSimulation()
 
     endDate = dt.datetime.now() -  dt.timedelta(days=int(user_input))
     startDate = dt.datetime.now() - dt.timedelta(days=300 + int(user_input))
@@ -318,7 +316,7 @@ def verify_model(inputStock):
     plt.title('MC simulation of a stock portfolio, ' + print_list)
     plt.show()
 
-def ml_stock_predictor(inputStock):
+def machineLearningStockPredictor(inputStock):
     import sklearn
     import pandas_datareader as web
     import datetime as dt
@@ -327,11 +325,11 @@ def ml_stock_predictor(inputStock):
     from sklearn.preprocessing import MinMaxScaler
     from tensorflow import keras
     from keras.models import Sequential
+    from time import sleep
     from keras.layers import Dense, Dropout, LSTM
 
     import warnings
     warnings.filterwarnings('ignore')
-
 
     company = inputStock
 
@@ -351,7 +349,7 @@ def ml_stock_predictor(inputStock):
 
     scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1, 1))
     
-    prediction_days = 90
+    prediction_days = 356
 
     x_train = []
     y_train = []
@@ -416,14 +414,14 @@ def ml_stock_predictor(inputStock):
     predicted_prices = scaler.inverse_transform(predicted_price)
 
     ### Plotting the test predictions
-    """
+    
     plt.plot(actual_price, color='black', label=f'Actual {actual_price} Price')
     plt.plot(predicted_price, color='green', label=f'Predicted {predicted_price} Price')
     plt.title(f"{company} Share Price")
     plt.xlabel("Time")
     plt.ylabel(f'{company} Share Price')
     plt.legend()
-    plt.show()"""
+    plt.show()
 
     ## Predict the next day
 
@@ -440,7 +438,9 @@ def ml_stock_predictor(inputStock):
 
     print(str(ticker_info['shortName']) + " is predicted to close at " + str(prediction) + ". That is a change of " + str(change))
 
-def plot_dividents(inputStock):   
+    sleep(24)
+
+def plotDividentsFromStock(inputStock):   
 
     stock = yf.Ticker(inputStock)
 
@@ -462,7 +462,7 @@ def plot_dividents(inputStock):
     plt.title("Dividends in " + str((stockInfo['currency'])))
     plt.show()
 
-def plot_stock_history(inputStock):
+def plotStockTrendHistory(inputStock):
     stock = inputStock
 
     stockData = yf.download(stock,'2015-1-1')['Adj Close']
@@ -484,11 +484,11 @@ def plot_stock_history(inputStock):
     plt.grid(which="major", color='k', linestyle='-.', linewidth=0.5)
     plt.show()
 
-def clear_window():
+def clearTerminalWindow():
     os.system('cls||clear')
 
-def get_ticker_info(inputStock):
-    clear_window()
+def getInfoFromTicker(inputStock):
+    clearTerminalWindow()
     stock = yf.Ticker(inputStock)
     stockInfo = stock.info
 
@@ -532,11 +532,11 @@ def get_ticker_info(inputStock):
         if closeWindow == "close" or closeWindow == "Close":
             return
 
-def load_pareto_portifolio():
+def loadParetoPortifolio():
     stockList = ['AKRBP.OL', 'AUSS.OL', 'COOL.OL', 'GJF.OL', 'HAFNI.OL', 'KOG.OL', 'MOWI.OL', 'NORAM.OL', 'NSKOG.OL']
     return stockList
 
-def edit_settings():
+def editSettingsFromJson():
     import json
 
     settingsList =  []
@@ -549,13 +549,14 @@ def edit_settings():
         print('\n')
         print("1. Edit the period for data collection")
         print("2. Edit the initial porifolio")
+        print("3. Exit to menu")
 
     g.close()
 
     global choice
 
     while True:
-        validChoices = [1,2]
+        validChoices = [1,2,3]
         choice = input("Choice: ")
 
         try:
@@ -584,6 +585,9 @@ def edit_settings():
             f.seek(0)
             json.dump(settings, f)
             f.truncate()
+        
+        if int(choice) == 3:
+            return
 
     f.close()
 
@@ -591,38 +595,38 @@ def main():
     choice = menu()
 
     if choice == 1:
-        stocks = get_input_stocks()
-        mc_simulation(stocks)
+        stocks = getInputStocksFromTerminal()
+        monteCarloSimulation(stocks)
 
     elif choice == 2:
-        stocks = get_input_stocks()
-        verify_model(stocks)
+        stocks = getInputStocksFromTerminal()
+        testMonteCarloSimulation(stocks)
 
     elif choice == 3:
-        stocks = get_input_stock()
-        plot_dividents(stocks)
+        stock = getInputStockFromTerminal()
+        plotDividentsFromStock(stock)
 
     elif choice == 4:
-        stocks = get_input_stock()
-        ml_stock_predictor(stocks)
+        stocks = getInputStockFromTerminal()
+        machineLearningStockPredictor(stock)
 
     elif choice == 5:
-        stocks = get_input_stocks()
-        plot_stock_history(stocks)
+        stocks = getInputStocksFromTerminal()
+        plotStockTrendHistory(stocks)
 
     elif choice == 6:
-        stocks = get_input_stock()
-        get_ticker_info(stocks)
+        stock = getInputStockFromTerminal()
+        getInfoFromTicker(stock)
 
     elif choice == 7:
-        clear_window()
+        clearTerminalWindow()
 
     elif choice == 8:
-        clear_window()
-        edit_settings()
+        clearTerminalWindow()
+        editSettingsFromJson()
 
 
-    clear_window()
-    start_up()
+    clearTerminalWindow()
+    startUp()
     main()
 
