@@ -6,7 +6,11 @@ from pandas_datareader import data as pdr
 import yfinance as yf
 from tabulate import tabulate
 from dateutil.relativedelta import relativedelta
+from threading import Thread
 import os
+import random
+import sys
+import time
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -24,15 +28,93 @@ def readSettingsFromJson():
     with open("settings.json", "r", encoding="utf-8") as f:
         settings = json.load(f)
 
-    settingsList.append(settings['monte_carlo_simulations_settings']['get_data_from'])
+    settingsList.append(settings['monte_carlo_simulations_settings']['get_data_from_monte_carlo_simulations'])
     settingsList.append(settings['monte_carlo_simulations_settings']['initial_portifolio'])
+    settingsList.append(settings['portifolio_optimalization']['get_data_from_portifolio_optimalization'])
+    settingsList.append(settings['portifolio_optimalization']['number_of_portifolios'])
 
     f.close()
-
     return settingsList
 
+def portifolioOptimalization(inputStocks):
+    
+    stocks = inputStocks
+
+    settingsList = readSettingsFromJson()
+
+    endDate = dt.datetime.now()
+    startDate = endDate - dt.timedelta(days=settingsList[-2])
+
+    portifolioData = pdr.get_data_yahoo(stocks, startDate, endDate)['Close']
+
+    portifolioReturns = portifolioData.pct_change()
+    numberOfStocks = len(inputStocks)
+
+    weights = 1/numberOfStocks
+    portifolioWeights = []
+
+    for i in range(0, numberOfStocks): portifolioWeights.append(weights)
+
+    retunPortiofolio = portifolioReturns.dot(portifolioWeights)
+
+    varianceMatrix = portifolioReturns.cov()*252
+
+    portifolioVariance = np.transpose(portifolioWeights)@varianceMatrix@portifolioWeights
+
+    portifolioVolatility = np.sqrt(portifolioVariance)
+
+    portifolioReturnsList = []
+    portifolioVolatilityList = []
+    portifolioWeightsList = []
+
+    numberOfAssets = len(portifolioData.columns)
+    numberOfPortifolios = settingsList[-1]
+
+    individualReturns = portifolioData.resample('Y').last().pct_change().mean()
+
+    for port in range(numberOfPortifolios):
+        weights = np.random.random(numberOfAssets)
+        weights = weights/np.sum(weights)
+        portifolioWeightsList.append(weights)
+        returns = np.dot(weights, individualReturns)
+        portifolioReturnsList.append(returns)
+
+        var = varianceMatrix.mul(weights, axis=0).mul(weights, axis=1).sum().sum()
+        sd = np.sqrt(var)
+
+        ann_sd = sd*np.sqrt(var)
+        portifolioVolatilityList.append(ann_sd)
+
+    
+    data  = {'Returns':portifolioReturnsList, 'Volatility':portifolioVolatilityList}
+
+    for counter, symbol in enumerate(portifolioData.columns.to_list()):
+        data[symbol+' weight']=[w[counter] for w in portifolioWeightsList]
+    
+    portifolio_V1 = pd.DataFrame(data)
+
+    portifolio_V1.plot.scatter(x='Volatility', y='Returns', marker='o', color='b', s=2, alpha=0.5, grid=True, figsize=[8,8])
+    plt.ylabel("Expected Returns")
+    plt.xlabel("Risk (Volatility)")
+    plt.show()
+
+    minimumVolatilityPortifolio = portifolio_V1.iloc[portifolio_V1['Volatility'].idxmin()]
+    minimumVolatilityPortifolio = minimumVolatilityPortifolio.to_frame()*100
+
+    rf = 0.01
+    optimalVolatilityPortifolio = portifolio_V1.iloc[((portifolio_V1['Returns']-rf)/portifolio_V1['Volatility']).idxmax()]
+    optimalVolatilityPortifolio= optimalVolatilityPortifolio*100
+
+    print("Minmimum volatility portifolio (weight in %)")
+    print(minimumVolatilityPortifolio)
+    print("Highest sharpe ratio (weight in %)")
+    print(optimalVolatilityPortifolio)
+    
+
+    close = input("Close: ")
+
 def menu():
-    menuList = [1,2,3,4,5,6,7, 8]
+    menuList = [1,2,3,4,5,6,7, 8, 9]
 
     print("1. Monte Carlo Simulator")
     print("2. Test the Monte Carlo model")
@@ -40,9 +122,10 @@ def menu():
     print("4. Predict tomorrows stock price with machine learning")
     print("5. Plot stock trend history")
     print("6. Print stock info")
-    print("7. Clear terminal")
+    print("7. Portifolio optimalizator")
+    print("8. Clear terminal")
     print('\n')
-    print("8. Edit values for the Monte Carlo Simulator")
+    print("9. Edit values for the Monte Carlo Simulator")
 
     while True:
         choice = input("Choice: ")
@@ -169,6 +252,8 @@ def monteCarloSimulation(inputStock):
         return
 
 def getInputStocksFromTerminal():
+    stateVariabel = 0
+
     n = 0
     stocks = []
     print("1. Choose stocks, and how many stocks would you like to analyse?")
@@ -184,15 +269,18 @@ def getInputStocksFromTerminal():
         getInputStockFromTerminal()
 
     if int(choice) == 1:
-        numberOfStocks = input("How many stocks would you like to analyse? ")
 
-        try:
-            val = int(numberOfStocks)
+        while stateVariabel == 0:
+            numberOfStocks = input("How many stocks would you like to analyse? ")
 
-        except:
-            print("Enter a real number!")
-            getInputStockFromTerminal()
+            try:
+                val = int(numberOfStocks)
+                stateVariabel = 1
 
+            except:
+                print("Enter a real number!")
+
+  
         while n < int(numberOfStocks):
             stock = input("Enter your stock ticker: ")
             try:
@@ -544,7 +632,7 @@ def editSettingsFromJson():
         settings = json.load(g)
         
         print("Current settings:")
-        print("Collected data from (Days): " + str(settings['monte_carlo_simulations_settings']['get_data_from']))
+        print("Collected data from (Days): " + str(settings['monte_carlo_simulations_settings']['get_data_from_monte_carlo_simulations']))
         print("Initial portifolio (USD): " + str(settings['monte_carlo_simulations_settings']['initial_portifolio']))
         print('\n')
         print("1. Edit the period for data collection")
@@ -591,6 +679,22 @@ def editSettingsFromJson():
 
     f.close()
 
+def progressbar():
+    toolbar_width = 40
+
+    # setup toolbar
+    sys.stdout.write("[%s]" % (" " * toolbar_width))
+    sys.stdout.flush()
+    sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
+
+    for i in range(toolbar_width):
+        time.sleep(0.1) # do real work here
+        # update the bar
+        sys.stdout.write("-")
+        sys.stdout.flush()
+
+    sys.stdout.write("]\n") # this ends the progress bar
+
 def main():
     choice = menu()
 
@@ -619,9 +723,13 @@ def main():
         getInfoFromTicker(stock)
 
     elif choice == 7:
-        clearTerminalWindow()
+        stocks = getInputStocksFromTerminal()
+        portifolioOptimalization(stocks)
 
     elif choice == 8:
+        clearTerminalWindow()
+
+    elif choice == 9:
         clearTerminalWindow()
         editSettingsFromJson()
 
@@ -629,4 +737,3 @@ def main():
     clearTerminalWindow()
     startUp()
     main()
-

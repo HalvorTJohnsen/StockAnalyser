@@ -1,1 +1,13 @@
-{"monte_carlo_simulations_settings": {"get_data_from": 300, "initial_portifolio": 10000}}
+{
+    "monte_carlo_simulations_settings": 
+    {
+        "get_data_from_monte_carlo_simulations": 300,
+        "initial_portifolio": 10000
+    },
+
+    "portifolio_optimalization":
+    {
+        "get_data_from_portifolio_optimalization" : 2000,
+        "number_of_portifolios": 10000 
+    }
+}
