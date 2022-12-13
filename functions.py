@@ -737,3 +737,5 @@ def main():
     clearTerminalWindow()
     startUp()
     main()
+
+getInfoFromTicker('AAPL')
