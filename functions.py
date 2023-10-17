@@ -575,12 +575,12 @@ def plotStockTrendHistory(inputStock):
 def clearTerminalWindow():
     os.system('cls||clear')
 
-def getInfoFromTicker(inputStock):
+"""def getInfoFromTicker(inputStock):
     clearTerminalWindow()
     stock = yf.Ticker(inputStock)
     stockInfo = stock.info
 
-    longBusinessSummary = stockInfo['longBusinessSummary']
+    longBusinessSummary = stockInfo.get('longBusinessSummary', 'Key not found')
 
     today = dt.date.today()
 
@@ -619,6 +619,7 @@ def getInfoFromTicker(inputStock):
 
         if closeWindow == "close" or closeWindow == "Close":
             return
+            """
 
 def loadParetoPortifolio():
     stockList = ['AKRBP.OL', 'AUSS.OL', 'COOL.OL', 'GJF.OL', 'HAFNI.OL', 'KOG.OL', 'MOWI.OL', 'NORAM.OL', 'NSKOG.OL']
@@ -720,7 +721,7 @@ def main():
 
     elif choice == 6:
         stock = getInputStockFromTerminal()
-        getInfoFromTicker(stock)
+        #getInfoFromTicker(stock)
 
     elif choice == 7:
         stocks = getInputStocksFromTerminal()
@@ -738,6 +739,5 @@ def main():
     startUp()
     main()
 
-getInfoFromTicker('AAPL')
 
 # test

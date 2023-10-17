@@ -4,9 +4,9 @@ Needed packages are:
 - Numpy
 - Matplotlib
 - Datetime
-- Pamndas Datareader
+- Pandas Datareader
 - yfinance
-- tavulate
+- tabulate
 - Dateutil relativedelta
 - Threading
 - Os
